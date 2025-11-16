@@ -50,22 +50,34 @@ const appsCollection = database.collection("apps");
 
 app.get("/apps", async (req, res) => {
   try {
-    const { limit = 0, skip = 0, sort = "size", order = "desc" } = req.query;
-    console.log(limit, sort, order);
+    const {
+      limit = 0,
+      skip = 0,
+      sort = "size",
+      order = "desc",
+      search = "",
+    } = req.query;
+    console.log(limit, sort, order, search);
 
     const sortOption = {};
     sortOption[sort || "size"] = order === "asc" ? 1 : -1;
     console.log(sortOption);
 
+    let query = {};
+    if (search) {
+      query.title = { $regex: search, $options: "i" };
+    }
+    console.log(query);
+
     const apps = await appsCollection
-      .find()
+      .find(query)
       .sort(sortOption)
       .limit(Number(limit))
       .skip(Number(skip))
       .project({ description: 0, ratings: 0 })
       .toArray();
 
-    const count = await appsCollection.countDocuments();
+    const count = await appsCollection.countDocuments(query);
 
     res.send({ apps, total: count });
   } catch (error) {
